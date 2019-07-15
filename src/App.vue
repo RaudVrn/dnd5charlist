@@ -1,7 +1,3 @@
-<template>
-  <character-sheet/>
-</template>
-
 <script>
 import CharacterSheet from './components/CharacterSheet.vue'
 
@@ -12,6 +8,10 @@ export default {
   }
 }
 </script>
+
+<template>
+  <character-sheet/>
+</template>
 
 <style>
 #app {
