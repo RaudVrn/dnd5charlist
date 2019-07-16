@@ -1,6 +1,7 @@
 <script>
 import CharacterSheet from './components/CharacterSheet.vue'
 
+
 export default {
   name: 'app',
   components: {

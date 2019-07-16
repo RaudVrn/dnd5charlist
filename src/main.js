@@ -1,5 +1,8 @@
 import Vue from 'vue'
 import App from './App.vue'
+import VueTextareaAutosize from 'vue-textarea-autosize'
+
+Vue.use(VueTextareaAutosize);
 
 Vue.config.productionTip = false;
 
