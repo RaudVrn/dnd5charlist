@@ -151,6 +151,19 @@
           death_throw_1: false,
           death_throw_2: false,
           death_throw_3: false,
+          attacks: [
+            {
+              id: 1,
+              name: '',
+              modifier: '',
+              type: '',
+            }
+          ],
+          equipment: '',
+          personality_traits: '',
+          ideals: '',
+          bonds: '',
+          flaws: '',
         },
         id: '',
         stats: [
@@ -280,25 +293,40 @@
 
     methods: {
       getModifier(stat){
-        return stat ? Math.floor((stat - 10)/2) : '' ;
+        console.log('getMOD');
+        if  (stat === 'agility') {
+          return this.char_data.initiative = this.char_data[stat] ? Math.floor((this.char_data[stat] - 10)/2) : '' ;
+        }
+        return this.char_data[stat] ? Math.floor((this.char_data[stat] - 10)/2) : '' ;
       },
       getSavingThrowsModifier(stat) {
+        console.log('getSavingThrowsModifier');
         this.char_data.saving_throws[stat].value = this.char_data.saving_throws[stat].check ?
-          Number(this.getModifier(this.char_data[stat])) + Number(this.char_data.mastery_points) :
-          this.getModifier(this.char_data[stat]);
+          Number(this.getModifier(stat)) + Number(this.char_data.mastery_points) :
+          this.getModifier(stat);
         return this.char_data.saving_throws[stat].value
       },
       getSkillsModifier(skill, stat) {
+        console.log('getSkillsModifier');
         this.char_data.skills[skill].value = this.char_data.skills[skill].check ?
-          Number(this.getModifier(this.char_data[stat])) + Number(this.char_data.mastery_points) :
-          this.getModifier(this.char_data[stat]);
+          Number(this.getModifier(stat)) + Number(this.char_data.mastery_points) :
+          this.getModifier(stat);
         return this.char_data.skills[skill].value
       },
       getPerception(){
+        console.log('getPerception');
         return this.char_data.perception = 10 + this.getSkillsModifier('perception', 'wisdom')
       },
       getInitiative(){
-        return this.char_data.initiative = this.getModifier(this.char_data.agility)
+        return this.char_data.initiative = this.getModifier('agility')
+      },
+      addAttackRow() {
+        this.char_data.attacks.push({
+          id: this.char_data.attacks[this.char_data.attacks.length - 1].id + 1,
+          name: '',
+          modifier: '',
+          type: '',
+        });
       },
 
       save() {
@@ -374,7 +402,7 @@
                     v-for="(stat, index) in stats"
                     :key="index">
               <label :for="stat.id_name">{{stat.name}}</label>
-              <p class="main-info__stats-stat-modifier">{{ char_data[stat.id_name] > 11 ? '+' : '' }}{{ getModifier(char_data[stat.id_name]) }}</p>
+              <p class="main-info__stats-stat-modifier">{{ char_data[stat.id_name] > 11 ? '+' : '' }}{{ getModifier(stat.id_name) }}</p>
               <input
                       class="main-info__stats-stat-input"
                       v-model="char_data[stat.id_name]"
@@ -440,6 +468,7 @@
         <div class="main-info__battle-main-wrapper"  >
           <div class="main-info__battle-main"><input v-model="char_data.armor_class" id="armor_class" type="text"><label for="armor_class">Класс Доспехов</label></div>
           <div class="main-info__battle-main"><input :value="getInitiative() > 0 ? '+' + getInitiative() : getInitiative()" id="initiative" type="text"><label for="initiative">Инициатива</label></div>
+          <!--<div class="main-info__battle-main"><input @change="() => {console.log('change');}" v-model="char_data.initiative" id="initiative" type="text"><label for="initiative">Инициатива</label></div>-->
           <div class="main-info__battle-main"><input v-model="char_data.speed" id="speed" type="text"><label for="speed">Скорость</label></div>
         </div>
         <div class="main-info__battle-hit-points-wrapper">
@@ -485,19 +514,59 @@
             <div style="display: flex;justify-content: space-between; align-items: center;margin-bottom: 15px;">
               <label style="letter-spacing: -1.0px">Провалы</label>
               <div>
-                <input v-model="death_throw_1" id="death_throw_1" type="checkbox">
-                <input v-model="death_throw_2" id="death_throw_2" type="checkbox">
-                <input v-model="death_throw_3" id="death_throw_3" type="checkbox">
+                <input v-model="char_data.death_throw_1" id="death_throw_1" type="checkbox">
+                <input v-model="char_data.death_throw_2" id="death_throw_2" type="checkbox">
+                <input v-model="char_data.death_throw_3" id="death_throw_3" type="checkbox">
               </div>
             </div>
             <p style="font-weight: 700;text-align: center;">Спасброски от смерти</p>
           </div>
         </div>
-        <div class="main-info__battle-attacks-wrapper">
-
+        <div class="main-info__battle-attacks-wrapper" style="margin: 10px;">
+          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse">
+            <thead>
+            <tr>
+              <th><p>Название</p></th>
+              <th><p>Мод.</p></th>
+              <th><p>Урон / тип</p></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(attack, index) in char_data.attacks" :key="index" :id="`attack-${attack.id}`">
+              <td><input v-model="attack.name" style="font-size: 12px;width: 108px;padding: 5px;margin-right: 5px; margin-bottom: 5px; text-transform: none;" type="text"></td>
+              <td><input v-model="attack.modifier" style="font-size: 12px; width: 20px;padding: 5px;margin-right: 5px;margin-bottom: 5px;text-transform: none;" type="text"></td>
+              <td><input v-model="attack.type" style="font-size: 12px; width: 50px;padding: 5px;margin-bottom: 5px;text-transform: none;" type="text"></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td><button @click="addAttackRow" style="font-size: 16px; padding: 1px; width: 100%">+</button></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="main-info__battle-equip-wrapper" style="margin: 10px;display: flex;flex-direction: column;align-items: center;">
+          <textarea-autosize v-model="char_data.equipment" id="equipment" style="width: 94%;padding: 5px;border: 1px solid #000;margin-bottom: 2px;font-size: 12px; text-transform:none;">
+          </textarea-autosize>
+          <label for="equipment">Снаряжение</label>
         </div>
       </div>
-      <div class="main-info__peculiarity"></div>
+      <div class="main-info__peculiarity">
+        <div style="margin: 10px;">
+          <div style="display: flex; flex-direction: column; align-items: center;margin-bottom: 5px;">
+            <input v-model="char_data.personality_traits" id="personality_traits" style="width: 94%;padding: 5px;text-transform: none;font-size: 12px; height: 48px;" type="text">
+            <label for="personality_traits">Черты характера</label></div>
+          <div style="display: flex; flex-direction: column; align-items: center;margin-bottom: 5px;">
+            <input v-model="char_data.ideals" id="ideals" style="width: 94%;padding: 5px;text-transform: none;font-size: 12px; height: 48px;" type="text">
+            <label for="ideals">Идеалы</label></div>
+          <div style="display: flex; flex-direction: column; align-items: center;margin-bottom: 5px;">
+            <input v-model="char_data.bonds" id="bonds" style="width: 94%;padding: 5px;text-transform: none;font-size: 12px; height: 48px;" type="text">
+            <label for="bonds">Привязанности</label></div>
+          <div style="display: flex; flex-direction: column; align-items: center;margin-bottom: 5px;">
+            <input v-model="char_data.flaws" id="flaws" style="width: 94%;padding: 5px;text-transform: none;font-size: 12px; height: 48px;" type="text">
+            <label for="flaws">Слабости</label></div>
+        </div>
+      </div>
     </div>
     <button @click="update">
       Сохранить
@@ -733,6 +802,9 @@
     border: 1px solid #000;
   }
 
+  .main-info__peculiarity {
+    border: 1px solid #000;
+  }
 
 
 </style>
