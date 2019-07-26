@@ -2,24 +2,19 @@
   import firebase from 'firebase/app';
   import 'firebase/firestore';
 
-  // Initialize Cloud Firestore through Firebase
-  firebase.initializeApp({
-    apiKey: 'AIzaSyALs6_fWvnUAEacKd1jXQTNSJKhO1QidZY',
-    authDomain: 'dnd5-online-charlist.firebaseapp.com',
-    projectId: 'dnd5-online-charlist'
-  });
-
-  let db = firebase.firestore();
-
   export default {
     name: 'CharacterSheet',
     props: {
-
+      db: {
+        type: Object,
+        default: () => {}
+      },
     },
 
     data() {
       return {
         char_data: {
+          user_data: {},
           char_name: '',
           class_level: '',
           predistoria: '',
@@ -165,7 +160,6 @@
           bonds: '',
           flaws: '',
         },
-        id: '',
         stats: [
           {
             name: 'Сила',
@@ -288,33 +282,31 @@
     },
 
     computed: {
-
+      id() {
+        return this.$route.params.id
+      }
     },
 
     methods: {
       getModifier(stat){
-        console.log('getMOD');
         if  (stat === 'agility') {
           return this.char_data.initiative = this.char_data[stat] ? Math.floor((this.char_data[stat] - 10)/2) : '' ;
         }
         return this.char_data[stat] ? Math.floor((this.char_data[stat] - 10)/2) : '' ;
       },
       getSavingThrowsModifier(stat) {
-        console.log('getSavingThrowsModifier');
         this.char_data.saving_throws[stat].value = this.char_data.saving_throws[stat].check ?
           Number(this.getModifier(stat)) + Number(this.char_data.mastery_points) :
           this.getModifier(stat);
         return this.char_data.saving_throws[stat].value
       },
       getSkillsModifier(skill, stat) {
-        console.log('getSkillsModifier');
         this.char_data.skills[skill].value = this.char_data.skills[skill].check ?
           Number(this.getModifier(stat)) + Number(this.char_data.mastery_points) :
           this.getModifier(stat);
         return this.char_data.skills[skill].value
       },
       getPerception(){
-        console.log('getPerception');
         return this.char_data.perception = 10 + this.getSkillsModifier('perception', 'wisdom')
       },
       getInitiative(){
@@ -330,19 +322,45 @@
       },
 
       save() {
-        db.collection("lists").add(this.char_data)
-          .then(function(data) {
-            console.log(data);
-          })
-          .catch(function(error) {
-            console.error("Error adding document: ", error);
-          });
+        if (localStorage.hasOwnProperty('current_user')) {
+          this.char_data.user_data = {
+            current_user: localStorage.current_user,
+            user_id: localStorage.user_id,
+            accessToken: localStorage.accessToken,
+          };
+          this.db.collection("lists").add(this.char_data)
+            .then(function(data) { // eslint-disable-next-line
+              console.log(data);
+            })
+            .catch(function(error) { // eslint-disable-next-line
+              console.error("Error adding document: ", error);
+            });
+          this.$router.push('/')
+        }
       },
       update() {
-        db.collection('lists').doc('UZTDh74bydQIbGXomCOg').set(this.char_data)
+        if (localStorage.hasOwnProperty('current_user')) {
+          this.db.collection('lists').doc(this.id).set(this.char_data)
+          this.$router.push('/')
+        }
+      },
+      deleteList() {
+        let really = confirm('Действительно удалить лист?');
+        if (really) {
+          this.db.collection('lists').doc(this.id).delete();
+          this.$router.push('/')
+        }
       }
     },
     created() {
+      console.log(localStorage);
+      console.log(this.$route.name || this.$route.params.id);
+      if  (this.$route.name !== 'new-list') {
+        this.db.collection("lists").doc(this.id).get().then((doc) => {
+          console.log(doc.data());
+          this.char_data = doc.data();
+        })
+      }
       // db.collection("lists").get().then((querySnapshot) => {
       //   querySnapshot.forEach((doc) => {
       //     this.char_data = doc.data();
@@ -478,14 +496,14 @@
               <input v-model="char_data.hit_points_max" id="hit_points_max" type="text">
             </div>
             <div style="display: flex;flex-direction: column;align-items: center;margin-bottom: 5px;">
-              <input style="display: block" id="hit_points_current" type="text">
-              <label v-model="char_data.hit_points_current" for="hit_points_current">ОЧКИ ЗДОРОВЬЯ, ТЕКУЩИЕ</label>
+              <input v-model="char_data.hit_points_current" style="display: block" id="hit_points_current" type="text">
+              <label for="hit_points_current">ОЧКИ ЗДОРОВЬЯ, ТЕКУЩИЕ</label>
             </div>
           </div>
           <div>
             <div style="display: flex;flex-direction: column;align-items: center;">
-              <input style="display: block" id="hit_points_temporary" type="text">
-              <label v-model="char_data.hit_points_temporary" for="hit_points_temporary">ОЧКИ ЗДОРОВЬЯ, ВРЕМЕННЫЕ</label>
+              <input v-model="char_data.hit_points_temporary" style="display: block" id="hit_points_temporary" type="text">
+              <label for="hit_points_temporary">ОЧКИ ЗДОРОВЬЯ, ВРЕМЕННЫЕ</label>
             </div>
           </div>
         </div>
@@ -568,9 +586,17 @@
         </div>
       </div>
     </div>
-    <button @click="update">
-      Сохранить
-    </button>
+    <div style="margin: 10px;display: flex;justify-content: space-around">
+      <button class="list-button" v-if="this.$route.name === 'new-list'" @click="save">
+        Сохранить
+      </button>
+      <button class="list-button" v-else @click="update">
+        Сохранить изменения
+      </button>
+      <button class="list-button" @click="deleteList">
+        Удалить лист
+      </button>
+    </div>
   </div>
 </template>
 
@@ -599,8 +625,7 @@
     margin: 0 auto;
     border: 1px solid #000;
     max-width: 760px;
-    max-height: 1076px;
-    height: 1076px;
+    min-height: 1076px;
     padding: 0 10px;
   }
 
@@ -643,6 +668,10 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-gap: 10px;
+
+    @media screen and (max-width: 768px){
+      grid-template-columns: 1fr;
+    }
   }
 
   .main-info__stats-wrapper {
@@ -804,6 +833,22 @@
 
   .main-info__peculiarity {
     border: 1px solid #000;
+  }
+
+  textarea {
+    border: 1px solid #000;
+  }
+
+  .list-button {
+    cursor: pointer;
+    padding: 10px;
+    width: 150px;
+    height: 50px;
+    border: 1px solid #000;
+
+    :active {
+      border: 2px solid #000;
+    }
   }
 
 
