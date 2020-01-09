@@ -1,4 +1,3 @@
-import App from './App';
 import CharacterSheet from './components/CharacterSheet';
 import CharactersList from './components/CharactersList';
 

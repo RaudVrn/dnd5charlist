@@ -1,7 +1,6 @@
 <script>
-  import _ from 'lodash';
-  import firebase from 'firebase/app';
   import 'firebase/firestore';
+  import { mapActions, mapGetters } from 'vuex';
 
   export default {
     name: 'CharacterSheet',
@@ -14,229 +13,7 @@
 
     data() {
       return {
-        char_data: {
-          user_data: {},
-          char_name: '',
-          class_level: '',
-          predistoria: '',
-          player_name: '',
-          race: '',
-          alignment: '',
-          exp_points: '',
-          strength: '',
-          agility: '',
-          stamina: '',
-          intelligence: '',
-          wisdom: '',
-          charisma: '',
-          inspiration: '',
-          mastery_points: '',
-          saving_throws: {
-            strength: {
-              check: false,
-              value: '',
-            },
-            agility: {
-              check: false,
-              value: '',
-            },
-            stamina: {
-              check: false,
-              value: '',
-            },
-            intelligence: {
-              check: false,
-              value: '',
-            },
-            wisdom: {
-              check: false,
-              value: '',
-            },
-            charisma: {
-              check: false,
-              value: '',
-            },
-          },
-          skills: {
-            acrobatics: {
-              check: false,
-              value: '',
-            },
-            athletics: {
-              check: false,
-              value: '',
-            },
-            magic: {
-              check: false,
-              value: '',
-            },
-            cheating: {
-              check: false,
-              value: '',
-            },
-            history: {
-              check: false,
-              value: '',
-            },
-            insight: {
-              check: false,
-              value: '',
-            },
-            intimidation: {
-              check: false,
-              value: '',
-            },
-            investigation: {
-              check: false,
-              value: '',
-            },
-            medicine: {
-              check: false,
-              value: '',
-            },
-            nature: {
-              check: false,
-              value: '',
-            },
-            perception: {
-              check: false,
-              value: '',
-            },
-            performance: {
-              check: false,
-              value: '',
-            },
-            conviction: {
-              check: false,
-              value: '',
-            },
-            religion: {
-              check: false,
-              value: '',
-            },
-            theft: {
-              check: false,
-              value: '',
-            },
-            stealth: {
-              check: false,
-              value: '',
-            },
-            survival: {
-              check: false,
-              value: '',
-            },
-            animal_handling: {
-              check: false,
-              value: '',
-            },
-          },
-          perception: '',
-          languages: '',
-          armor_class: '',
-          initiative: '',
-          speed: '',
-          hit_points_max: '',
-          hit_points_current: '',
-          hit_points_temporary: '',
-          life_cubes_max: '',
-          life_cubes_current: '',
-          life_throw_1: false,
-          life_throw_2: false,
-          life_throw_3: false,
-          death_throw_1: false,
-          death_throw_2: false,
-          death_throw_3: false,
-          attacks: [
-            {
-              id: 1,
-              name: '',
-              modifier: '',
-              type: '',
-            }
-          ],
-          equipment: '',
-          personality_traits: '',
-          ideals: '',
-          bonds: '',
-          flaws: '',
-          features_and_traits: '',
-          spellcaster_type: '',
-          spell_main_stat: '',
-          spell_saving_throw: '',
-          spell_modifier: '',
-          spells: {
-            0: [
-                {
-                  id: 1,
-                  spell: '',
-                }
-              ],
-            1: [
-              {
-                id: 1,
-                check: false,
-                spell: '',
-              }
-              ],
-            2:[
-                {
-                  id: 1,
-                  check: false,
-                  spell: '',
-                }
-              ],
-            3:[
-                {
-                  id: 1,
-                  check: false,
-                  spell: '',
-                }
-              ],
-            4:[
-                {
-                  id: 1,
-                  check: false,
-                  spell: '',
-                }
-              ],
-            5:[
-                {
-                  id: 1,
-                  check: false,
-                  spell: '',
-                }
-              ],
-            6:[
-                {
-                  id: 1,
-                  check: false,
-                  spell: '',
-                }
-              ],
-            7:[
-                {
-                  id: 1,
-                  check: false,
-                  spell: '',
-                }
-              ],
-            8:[
-                {
-                  id: 1,
-                  check: false,
-                  spell: '',
-                }
-              ],
-            9:[
-                {
-                  id: 1,
-                  check: false,
-                  spell: '',
-                }
-              ],
-          },
-        },
+        char_data: {},
         stats: [
           {
             name: 'Сила',
@@ -359,12 +136,21 @@
     },
 
     computed: {
+      ...mapGetters([
+        'getCharData',
+      ]),
       id() {
         return this.$route.params.id
       }
     },
-
     methods: {
+      ...mapActions([
+        'fetchCharList',
+        'setProp',
+        'saveList',
+        'updateList',
+        'deleteList',
+      ]),
       getModifier(stat){
         if  (stat === 'agility') {
           return this.char_data.initiative = this.char_data[stat] ? Math.floor((this.char_data[stat] - 10)/2) : '' ;
@@ -422,8 +208,6 @@
           this.char_data.spells[tier].pop()
         }
       },
-
-
       save() {
         if (localStorage.hasOwnProperty('current_user')) {
           if (this.char_data.char_name !== '') {
@@ -432,14 +216,9 @@
               user_id: localStorage.user_id,
               accessToken: localStorage.accessToken,
             };
-            this.db.collection("lists").add(this.char_data)
-              .then(function(data) { // eslint-disable-next-line
-
-              })
-              .catch(function(error) { // eslint-disable-next-line
-                console.error("Error adding document: ", error);
-              });
-            this.$router.push('/')
+            console.log('payload', this.char_data)
+            this.saveList(this.char_data)
+            // this.$router.push('/')
           }
           else {
             alert('Вашему персонажу необходимо имя :)')
@@ -452,29 +231,36 @@
       update() {
         if (localStorage.hasOwnProperty('current_user')) {
           if (this.char_data.char_name !== '') {
-            this.db.collection('lists').doc(this.id).set(this.char_data)
-            this.$router.push('/')
+            console.log('payload', this.char_data)
+            this.updateList({
+							id: this.id,
+							char_data: this.char_data
+            })
           }
           else {
             alert('Вашему персонажу необходимо имя :)')
           }
         }
       },
-      deleteList() {
+      removeList() {
         let really = confirm('Действительно удалить лист?');
         if (really) {
-          this.db.collection('lists').doc(this.id).delete();
+          this.deleteList(this.id)
           this.$router.push('/')
         }
-      }
+      },
+	    handleChange(event) {
+        this.setProp({
+	       event,
+	       id: this.id,
+       });
+      },
     },
     created() {
-      if  (this.$route.name !== 'new-list') {
-        this.db.collection("lists").doc(this.id).get().then((doc) => {
-          let result = doc.data();
-          _.merge(this.char_data, result)
-        })
+      if (this.$route.name !== 'new-list') {
+        this.fetchCharList(this.id)
       }
+      this.char_data = this.getCharData;
     },
   }
 </script>
@@ -488,7 +274,7 @@
       <button class="list-button" v-else @click="update">
         Сохранить изменения
       </button>
-      <button v-if="this.$route.name !== 'new-list'" class="list-button" @click="deleteList">
+      <button v-if="this.$route.name !== 'new-list'" class="list-button" @click="removeList">
         Удалить лист
       </button>
     </div>
@@ -496,38 +282,37 @@
       <div class="main-info__header">
         <div>
           <div class="header__input-wrapper header-input__wrapper--char-name">
-            <input
-                    type="text"
-                    id="character-name"
-                    class="header__input header__input--char-name"
-                    v-model="char_data.char_name">
-            <label for="character-name">Имя персонажа</label>
+            <input type="text"
+                   id="char_name"
+                   class="header__input header__input--char-name"
+                   @change="handleChange" :value="char_data.char_name">
+            <label for="char_name">Имя персонажа</label>
           </div>
         </div>
         <div class="header-info">
           <div class="header__input-wrapper">
-            <input v-model="char_data.class_level" id="class-level" type="text" class="header__input">
-            <label for="class-level"> Класс и уровень</label>
+            <input @change="handleChange" :value="char_data.class_level" id="class_level" type="text" class="header__input">
+            <label for="class_level"> Класс и уровень</label>
           </div>
           <div class="header__input-wrapper">
-            <input v-model="char_data.predistoria" id="predistoria" type="text" class="header__input">
+            <input @change="handleChange" :value="char_data.predistoria" id="predistoria" type="text" class="header__input">
             <label for="predistoria">Предыстория</label>
           </div>
           <div class="header__input-wrapper">
-            <input v-model="char_data.player_name" id="player-name" type="text" class="header__input">
-            <label for="player-name">Имя игрока</label>
+            <input @change="handleChange" :value="char_data.player_name" id="player_name" type="text" class="header__input">
+            <label for="player_name">Имя игрока</label>
           </div>
           <div class="header__input-wrapper">
-            <input v-model="char_data.race" id="race" type="text" class="header__input">
+            <input @change="handleChange" :value="char_data.race" id="race" type="text" class="header__input">
             <label for="race">Раса</label>
           </div>
           <div class="header__input-wrapper">
-            <input v-model="char_data.alignment" id="alignment" type="text" class="header__input">
+            <input @change="handleChange" :value="char_data.alignment" id="alignment" type="text" class="header__input">
             <label for="alignment">Мировоззрение</label>
           </div>
           <div class="header__input-wrapper">
-            <input v-model="char_data.exp_points" id="exp-points" type="number" class="header__input">
-            <label for="exp-points">Очки опыта</label>
+            <input @change="handleChange" :value="char_data.exp_points" id="exp_points" type="number" class="header__input">
+            <label for="exp_points">Очки опыта</label>
           </div>
         </div>
       </div>
@@ -535,40 +320,49 @@
         <div class="main-info__parameters">
           <div class="main-info__stats-wrapper">
             <div class="main-info__stats">
-              <div
-                      class="main-info__stats-stat-wrapper"
-                      v-for="(stat, index) in stats"
-                      :key="index">
+              <div class="main-info__stats-stat-wrapper" 
+                   v-for="(stat, index) in stats" 
+                   :key="index">
                 <label :for="stat.id_name">{{stat.name}}</label>
                 <p class="main-info__stats-stat-modifier">{{ char_data[stat.id_name] > 11 ? '+' : '' }}{{ getModifier(stat.id_name) }}</p>
-                <input
-                        class="main-info__stats-stat-input"
-                        v-model="char_data[stat.id_name]"
-                        :id="stat.id_name"
-                        type="number"
-                        min="1">
+                <input class="main-info__stats-stat-input" 
+                       :value="char_data[stat.id_name]"
+                       @input="handleChange"
+                       :id="stat.id_name" 
+                       type="number" 
+                       min="1">
               </div>
             </div>
             <div class="main-info__stats-fits">
               <div class="main-info__stats-inspiration-wrapper">
-                <input class="main-info__stats-inspiration" v-model="char_data.inspiration" id="inspiration" type="text">
+                <input class="main-info__stats-inspiration" @change="handleChange" :value="char_data.inspiration" id="inspiration" type="text">
                 <label for="inspiration">Вдохновение</label>
               </div>
               <div class="main-info__stats-mastery-points-wrapper">
-                <input  class="main-info__stats-mastery-points" v-model="char_data.mastery_points" id="mastery_points" type="text">
+                <input  class="main-info__stats-mastery-points" @change="handleChange" :value="char_data.mastery_points" id="mastery_points" type="text">
                 <label for="mastery_points">Бонус мастерства</label>
               </div>
               <div class="main-info__stats-saving-throws">
                 <div class="saving-throws__wrapper"
                      v-for="(stat, index) in stats"
                      :key="index">
-                  <input class="saving-throws__input" type="checkbox"
-                         :id="'saving_throw_check_' + stat.id_name"
-                         v-model="char_data.saving_throws[stat.id_name].check">
-                    <p class="saving-throws__modifier" style="">
-                      {{ char_data.saving_throws[stat.id_name].value > 0 ? '+' : '' }}{{getSavingThrowsModifier(stat.id_name) }}
-                    </p>
-                  <label :for="'saving_throw_check_' + stat.id_name">{{stat.name}}</label>
+                  <input class="saving-throws__input"
+                         type="checkbox"
+                         :id="`saving_throws.${stat.id_name}.check`"
+                         :value="char_data.saving_throws[stat.id_name].check" 
+                         @change="handleChange">
+									<input class="saving-throws__modifier" 
+									       type="text" 
+									       :value="char_data.saving_throws[stat.id_name].value > 0 ? 
+									       `+${char_data.saving_throws[stat.id_name].value}`: 
+									       char_data.saving_throws[stat.id_name].value " 
+									       @change="handleChange" 
+									       :id="`saving_throws.${stat.id_name}.value`">
+<!--									<input class="saving-throws__modifier" type="text" :value="getSavingThrowsModifier(stat.id_name)" @change="handleChange" :id="`saving_throw.${stat.id_name}.value`">-->
+<!--                    <p class="saving-throws__modifier" style="">-->
+<!--                      {{ char_data.saving_throws[stat.id_name].value > 0 ? '+' : '' }}{{getSavingThrowsModifier(stat.id_name) }}-->
+<!--                    </p>-->
+                  <label :for="`saving_throws.${stat.id_name}.check`">{{stat.name}}</label>
                 </div>
                 <p>Спасброски</p>
               </div>
@@ -577,12 +371,20 @@
                      v-for="(skill, index) in skills_list"
                      :key="index">
                   <input class="skills__input" type="checkbox"
-                         :id="'skill_check_' + skill.id_name"
-                         v-model="char_data.skills[skill.id_name].check">
-                  <p class="skills__modifier">
-                    {{ char_data.skills[skill.id_name].value > 0 ? '+' : '' }}{{getSkillsModifier(skill.id_name, skill.stat) }}
-                  </p>
-                  <label :for="'skill_check_' + skill.id_name">{{skill.name}}</label>
+                         :id="`skills.${skill.id_name}.check`"
+                         :value="char_data.skills[skill.id_name].check" 
+                         @change="handleChange">
+	                <input class="saving-throws__modifier"
+	                       type="text"
+	                       :value="char_data.skills[skill.id_name].value > 0 ? 
+	                       `+${char_data.skills[skill.id_name].value}` : 
+	                       char_data.skills[skill.id_name].value"
+	                       @change="handleChange"
+	                       :id="`skills.${skill.id_name}.value`">
+<!--                  <p class="skills__modifier">-->
+<!--                    {{ char_data.skills[skill.id_name].value > 0 ? '+' : '' }}{{getSkillsModifier(skill.id_name, skill.stat) }}-->
+<!--                  </p>-->
+                  <label :for="`skills.${skill.id_name}.check`">{{skill.name}}</label>
                 </div>
                 <p>Навыки</p>
               </div>
@@ -602,7 +404,7 @@
           <div class="main-info__battle-main-wrapper"  >
             <div class="main-info__battle-main"><input v-model="char_data.armor_class" id="armor_class" type="text"><label for="armor_class">Класс Доспехов</label></div>
             <div class="main-info__battle-main">
-              <p class="main-info__battle-main-initiative">{{ getInitiative() > 0 ? '+' + getInitiative() : getInitiative() }}</p><p class="main-info__battle-main-initiative-label">Инициатива</p></div>
+              <p class="main-info__battle-main-initiative">{{ getInitiative() > 0 ? `+${getInitiative()}` : getInitiative() }}</p><p class="main-info__battle-main-initiative-label">Инициатива</p></div>
             <!--<div class="main-info__battle-main"><input :value="getInitiative() > 0 ? '+' + getInitiative() : getInitiative()" id="initiative" type="text"><label for="initiative">Инициатива</label></div>-->
             <!--<div class="main-info__battle-main"><input @change="() => {console.log('change');}" v-model="char_data.initiative" id="initiative" type="text"><label for="initiative">Инициатива</label></div>-->
             <div class="main-info__battle-main"><input v-model="char_data.speed" id="speed" type="text"><label for="speed">Скорость</label></div>
@@ -988,6 +790,9 @@
     width: 30px;
     height: 25px;
     margin-right: 10px;
+		font-size: 16px;
+		font-weight: 700;
+		text-align: center;
   }
 
   .main-info__stats-inspiration-wrapper,
@@ -995,38 +800,29 @@
     margin: 0 0 10px;
   }
 
-  .main-info__stats-saving-throws {
-    margin-bottom: 6px
+  .main-info__stats-saving-throws,
+  .main-info__stats-skills {
+		margin-bottom: 6px;
+		border: 1px solid #000;
   }
 
-  .saving-throws__wrapper {
+  .saving-throws__wrapper,
+  .skills__wrapper{
+	  display: flex;
+	  align-items: center;
     margin-bottom: 3px;
-    border: 1px solid #000;
     padding: 2px;
   }
 
-  .saving-throws__modifier {
+  .saving-throws__modifier,
+  .skills__modifier{
     font-size: 12px;
     font-weight: 700;
     display: inline-block;
     width: 20px;
     text-align: center;
     height: 12px;
-  }
-
-  .skills__wrapper {
-    margin-bottom: 3px;
-    border: 1px solid #000;
-    padding: 2px;
-  }
-
-  .skills__modifier {
-    display: inline-block;
-    width: 20px;
-    text-align: center;
-    height: 12px;
-    font-size: 12px;
-    font-weight: 700;
+	  margin: 0 4px;
   }
 
   .main-info__stats-perception-wrapper {
@@ -1038,7 +834,9 @@
     width: 30px;
     height: 25px;
     margin: 2px 10px 2px 2px;
-
+		font-size: 16px;
+		font-weight: 700;
+		text-align: center;
   }
 
   .main-info__battle,

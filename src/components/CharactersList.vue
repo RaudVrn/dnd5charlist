@@ -1,13 +1,11 @@
 <script>
   import 'firebase/firestore';
-  import CharacterSheet from './CharacterSheet';
+  import { mapActions, mapGetters, mapState } from 'vuex'
 
   export default {
     name: "CharactersList",
     data() {
       return {
-        fetching: true,
-        lists: []
       }
     },
     props: {
@@ -16,24 +14,21 @@
         default: () => {}
       },
     },
-    components: {
-      CharacterSheet,
-    },
-
+		computed: {
+			...mapGetters([
+				'getLists',
+			]),
+			...mapState([
+				'fetching'
+			]),
+		},
+		methods: {
+			...mapActions([
+				'fetchLists'
+			]),
+		},
     created() {
-      this.db.collection("lists").get().then((querySnapshot) => {
-        this.fetching = true;
-        querySnapshot.docs.forEach((doc) => {
-          if (doc.data().user_data.user_id === localStorage.user_id)
-            this.lists.push({
-              char_name: doc.data().char_name,
-              class_level: doc.data().class_level,
-              id: doc.id,
-            });
-          });
-        }).then(() => {
-          this.fetching = false
-      });
+			this.fetchLists();
     }
   }
 </script>
@@ -49,11 +44,11 @@
    <div class="char-list__wrapper" v-else>
      <router-link class="char-list__new-button glow-on-hover" :db="db" to="new-list">Создать нового персонажа</router-link>
      <ul class="char-list__list">
-       <li class="char-list__item" v-for="(list, index) in lists" :key="index">
+       <li class="char-list__item" v-for="(list, index) in this.getLists" :key="index">
          <p><router-link class="char-list__link glow-on-hover" :db="db" :to="`/list/${list.id}`">{{ list.char_name }} &ndash; {{ list.class_level }}</router-link></p>
        </li>
      </ul>
-     <div v-if="lists.length === 0">
+     <div v-if="this.getLists.length === 0">
        <h2>
          У Вас еще нет сохраненных персонажей :(
        </h2>
